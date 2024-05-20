@@ -1,0 +1,16 @@
+[boost]
+  url=git@github.com:motis-project/boost.git
+  branch=master
+  commit=60cae66449fa3c9599b2b7d3d5d44c65301ed3a3
+[utl]
+  url=git@github.com:motis-project/utl.git
+  branch=master
+  commit=fd7425b1a57a4b887318ba8c41a3184f8c4a50c5
+[googletest]
+  url=git@github.com:motis-project/googletest.git
+  branch=master
+  commit=34a46558609e05865c197f0260ab36daa7cbbb6e
+[concurrentqueue]
+  url=git@github.com:cameron314/concurrentqueue.git
+  branch=master
+  commit=6dd38b8a1dbaa7863aa907045f32308a56a6ff5d
