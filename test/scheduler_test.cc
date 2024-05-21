@@ -1,19 +1,31 @@
 #include "gtest/gtest.h"
 
+#include "hctx/call.h"
 #include "hctx/scheduler.h"
 #include "hctx/scheduler_impl.h"
 
 TEST(hctx, scheduler) {
-  auto f = hctx::free_list{};
+  auto f = hctx::free_list{100U};
   auto s = hctx::scheduler{f};
 
   auto x = 0U;
-  s.post_high_prio([&]() { x = 1U; });
+  s.post_low_prio([&]() {
+    x = 1U;
 
-  auto op = hctx::op_ptr{};
-  while (s.high_prio_q_.try_dequeue(op)) {
-    op->resume();
-  }
+    auto const a = hctx::call([&]() { return 7; });
+    auto const b = hctx::call([&]() { return 11; });
 
-  EXPECT_EQ(1U, x);
+    hctx::call([&]() {
+      x = 2U;
+      hctx::call([&]() { x = 3U; })->val();
+    })->val();
+
+    EXPECT_EQ(18, a->val() + b->val());
+  });
+
+  s.run();
+
+  std::cerr << "FIN\n";
+
+  EXPECT_EQ(3U, x);
 }

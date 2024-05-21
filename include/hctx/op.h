@@ -7,7 +7,6 @@
 #include "boost/context/detail/fcontext.hpp"
 
 #include "hctx/fn.h"
-#include "hctx/scheduler.h"
 #include "hctx/stack.h"
 #include "hctx/thread_local.h"
 
@@ -58,7 +57,7 @@ struct op : public std::enable_shared_from_this<op> {
         stack_{stack},
         op_ctx_{bc::make_fcontext(stack, kStackSize, execute)},
         sched_{sched},
-        fn_{std::make_unique(std::forward<Fn>(fn))},
+        fn_{make_fn(std::forward<Fn>(fn))},
         state_{kInactive} {
   }
 

@@ -1,12 +1,16 @@
 #include "hctx/op.h"
 
+#include <iostream>
+
 #include "hctx/scheduler.h"
 
 namespace hctx {
 
+CTX_ATTRIBUTE_TLS op* this_op = nullptr;
+
 op::~op() {
   if (stack_ != nullptr) {
-    sched_.stacks_.push(stack_);
+    sched_.stack_mem_.push(to_allocation(stack_));
     stack_ = nullptr;
   }
 }
@@ -31,7 +35,7 @@ void op::resume() {
         if (state_.compare_exchange_weak(s, kActive)) {
           // Inactive and we are the ones who set it to active.
           // -> let's run it!
-          break;
+          goto run;
         } else {
           // State changed between load and now, try again.
           continue;
@@ -50,6 +54,8 @@ void op::resume() {
   // ==========
   // EXECUTION
   // ----------
+
+run:
   this_op = this;
   enter_op_start_switch();
   auto const t = bc::jump_fcontext(op_ctx_, this);
@@ -76,6 +82,9 @@ void op::resume() {
           // -> go equeue!
           sched_.enqueue_high_prio(this->shared_from_this());
           return;
+        } else {
+          // State changed. Check again.
+          continue;
         }
 
       case kActive:
@@ -94,7 +103,7 @@ void op::resume() {
 }
 
 void op::suspend(bool const finished) {
-  auto const self = finished ? nullptr : this->shared_from_this();
+  auto const self = this->shared_from_this();
   exit_op_start_switch();
   auto const t =
       bc::jump_fcontext(main_ctx_, reinterpret_cast<void*>(finished ? 0 : 1));
@@ -116,7 +125,7 @@ void execute(bc::transfer_t const t) {
 
 #ifdef CTX_ENABLE_ASAN
 void op::enter_op_start_switch() {
-  __sanitizer_start_switch_fiber(&fake_stack_, stack_.get_allocated_mem(),
+  __sanitizer_start_switch_fiber(&fake_stack_, to_allocation(stack_),
                                  kStackSize);
 }
 

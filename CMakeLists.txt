@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.20)
 project(hctx)
 
+# --- OPTIONS ---
+option(CTX_VALGRIND "CTX_VALGRIND" OFF)
+option(CTX_ASAN "CTX_ASAN" OFF)
+
+# --- DEPENDENCIES ---
 include(cmake/pkg.cmake)
 
 # --- LINT ---
@@ -34,6 +39,8 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
             -Wno-reserved-macro-identifier
             -Wno-documentation-unknown-command
             -Wno-duplicate-enum
+            -Wno-reserved-identifier
+            -Wno-ctad-maybe-unsupported
             -Werror)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
     set(hctx-compile-options -Wall -Wextra -Werror)
@@ -51,11 +58,17 @@ endif ()
 
 
 # --- LIB ---
-add_library(hctx src/ctx.cc)
+add_library(hctx src/op.cc src/cv.cc src/fn.cc)
 target_include_directories(hctx PUBLIC include)
 target_compile_features(hctx PUBLIC cxx_std_23)
-target_link_libraries(hctx PUBLIC boost_context concurrentqueue)
+target_link_libraries(hctx PUBLIC boost_context concurrentqueue cista)
 target_compile_options(hctx PRIVATE ${hctx-compile-options})
+if (CTX_ASAN)
+    target_compile_definitions(hctx PUBLIC CTX_ENABLE_ASAN)
+endif ()
+if (CTX_VALGRIND)
+    target_compile_definitions(hctx PUBLIC CTX_ENABLE_VALGRIND)
+endif ()
 
 
 # --- TEST ---

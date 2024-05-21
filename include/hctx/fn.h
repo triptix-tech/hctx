@@ -6,12 +6,12 @@
 namespace hctx {
 
 struct fn {
-  virtual ~fn() = default;
+  virtual ~fn();
   virtual void operator()() = 0;
 };
 
 template <typename Fn>
-struct fn_impl : public fn {
+struct fn_impl final : public fn {
   fn_impl(Fn&& f) : fn_{std::forward<Fn>(f)} {}
   ~fn_impl() override = default;
 
